@@ -219,6 +219,23 @@ def profile():
     if not g.user:
         flash("Access unauthorized.", "danger")
         return redirect("/")
+    if form.validate_on_submit():
+        user = User.authenticate(g.user.username, form.password.data)
+        if user:
+            if form.username.data:
+                user.username = form.username.data
+            if form.image_url.data:
+                user.image_url = form.image_url.data
+            if form.email.data:
+                user.email = form.email.data
+            if form.header_image_url.data:
+                user.header_image_url = form.header_image_url.data
+            if form.bio.data:
+                user.bio = form.bio.data
+
+            db.session.commit()
+            return redirect(f"/users/{user.id}")
+
     return render_template("users/edit.html", form=form)
 
 
