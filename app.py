@@ -317,8 +317,18 @@ def homepage():
     """
 
     if g.user:
-        messages = Message.query.order_by(Message.timestamp.desc()).limit(100).all()
+        follows_list = g.user.following
+        follows_set = set()
+        for item in follows_list:
+            follows_set.add(item.id)
 
+        # messages = Message.query.order_by(Message.timestamp.desc()).limit(100).all()
+        messages = (
+            Message.query.filter(Message.user_id.in_(follows_set))
+            .order_by(Message.timestamp.desc())
+            .limit(100)
+            .all()
+        )
         return render_template("home.html", messages=messages)
 
     else:
