@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -211,6 +211,19 @@ def stop_following(follow_id):
     return redirect(f"/users/{g.user.id}/following")
 
 
+@app.route("/users/<int:user_id>/likes")
+def show_likes(user_id):
+    """Show all of a user's liked posts"""
+
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    user = User.query.get(user_id)
+
+    return render_template("users/likes.html", user=user)
+
+
 @app.route("/users/profile", methods=["GET", "POST"])
 def profile():
     """Update profile for current user."""
@@ -302,6 +315,32 @@ def messages_destroy(message_id):
     db.session.commit()
 
     return redirect(f"/users/{g.user.id}")
+
+
+@app.route("/messages/<int:message_id>/like", methods=["POST"])
+def message_like(message_id):
+    """Like a message"""
+
+    if not g.user:
+        flash("Log in to like this post!", "danger")
+        return redirect(f"/messages/{message_id}")
+
+    msg = Message.query.get(message_id)
+    user = g.user
+    like = Likes(user_id=user.id, message_id=msg.id)
+    db.session.add(like)
+    db.session.commit()
+    return redirect(f"/messages/{message_id}")
+
+
+@app.route("/messages/<int:message_id>/unlike", methods=["POST"])
+def message_unlike(message_id):
+    """Unlike a message"""
+    like = Likes.query.get((g.user.id, message_id))
+    # pdb.set_trace()
+    db.session.delete(like)
+    db.session.commit()
+    return redirect(f"/messages/{message_id}")
 
 
 ##############################################################################
